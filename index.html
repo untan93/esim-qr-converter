@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Convert an eSIM activation code to a QR code, or decode a QR image back to its activation string. Processing stays in your browser.">
+  <meta name="theme-color" content="#111827">
+  <title>eSIM Activation Code ↔ QR Converter</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="eSIM QR Converter home">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </span>
+        <span>eSIM QR Converter</span>
+      </a>
+      <span class="privacy-badge">Runs locally in your browser</span>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">Private · Fast · No sign-in</p>
+        <h1 id="page-title">Activation code to QR.<br>QR back to activation code.</h1>
+        <p class="hero-copy">Create a standard eSIM LPA QR code from an activation string, or upload a QR image to read and parse its contents.</p>
+      </section>
+
+      <section class="tool-grid" aria-label="Converter tools">
+        <article class="tool-card">
+          <div class="card-heading">
+            <span class="step-number">01</span>
+            <div>
+              <h2>Activation code → QR</h2>
+              <p>Paste a complete LPA string or build one from its fields.</p>
+            </div>
+          </div>
+
+          <div class="segmented-control" role="tablist" aria-label="Activation code input mode">
+            <button class="segment is-active" id="full-mode-button" type="button" role="tab" aria-selected="true" aria-controls="full-mode-panel">Full LPA string</button>
+            <button class="segment" id="fields-mode-button" type="button" role="tab" aria-selected="false" aria-controls="fields-mode-panel">Separate fields</button>
+          </div>
+
+          <div id="full-mode-panel" class="mode-panel" role="tabpanel" aria-labelledby="full-mode-button">
+            <label for="lpa-string">Full activation string</label>
+            <textarea id="lpa-string" rows="5" spellcheck="false" autocomplete="off" placeholder="LPA:1$smdp.example.com$MATCHING-ID"></textarea>
+            <p class="field-help">The QR will contain this exact value after surrounding spaces are removed.</p>
+          </div>
+
+          <div id="fields-mode-panel" class="mode-panel" role="tabpanel" aria-labelledby="fields-mode-button" hidden>
+            <div class="field-stack">
+              <div>
+                <label for="smdp-address">SM-DP+ address</label>
+                <input id="smdp-address" type="text" spellcheck="false" autocomplete="off" placeholder="smdp.example.com">
+              </div>
+              <div>
+                <label for="matching-id">Activation code / Matching ID</label>
+                <input id="matching-id" type="text" spellcheck="false" autocomplete="off" placeholder="Your activation code">
+              </div>
+              <p class="field-help field-note">A carrier confirmation code is normally entered separately on the device, not added as the next QR field. Use “Full LPA string” when your provider supplies a complete string with additional parameters.</p>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button id="generate-button" class="primary-button" type="button">Generate QR code</button>
+            <button id="clear-generate-button" class="secondary-button" type="button">Clear</button>
+          </div>
+
+          <div id="generate-message" class="message" aria-live="polite"></div>
+
+          <div id="qr-result" class="result-panel" hidden>
+            <div class="qr-frame">
+              <div id="qr-output" aria-label="Generated QR code"></div>
+            </div>
+            <div class="result-content">
+              <span class="result-label">Encoded activation string</span>
+              <code id="encoded-value"></code>
+              <div class="button-row compact">
+                <button id="download-button" class="primary-button" type="button">Download PNG</button>
+                <button id="copy-encoded-button" class="secondary-button" type="button">Copy string</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="tool-card">
+          <div class="card-heading">
+            <span class="step-number">02</span>
+            <div>
+              <h2>QR image → activation code</h2>
+              <p>Upload or drag in a PNG, JPG, WEBP, or GIF image.</p>
+            </div>
+          </div>
+
+          <label id="drop-zone" class="drop-zone" for="qr-file">
+            <input id="qr-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+            <span class="upload-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="img"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <strong>Choose a QR image</strong>
+            <span>or drag and drop it here</span>
+          </label>
+
+          <div id="decode-message" class="message" aria-live="polite"></div>
+
+          <div id="decode-result" class="result-panel vertical" hidden>
+            <div class="preview-wrap">
+              <canvas id="image-preview" aria-label="Uploaded QR image preview"></canvas>
+              <span id="decode-status-badge" class="status-badge">QR detected</span>
+            </div>
+
+            <div class="result-content full-width">
+              <span class="result-label">Decoded content</span>
+              <code id="decoded-value"></code>
+              <button id="copy-decoded-button" class="secondary-button fit" type="button">Copy decoded value</button>
+            </div>
+
+            <div id="parsed-fields" class="parsed-fields" hidden>
+              <h3>Parsed eSIM fields</h3>
+              <dl>
+                <div><dt>Format</dt><dd id="parsed-format"></dd></div>
+                <div><dt>SM-DP+ address</dt><dd id="parsed-smdp"></dd></div>
+                <div><dt>Activation code / Matching ID</dt><dd id="parsed-matching-id"></dd></div>
+                <div id="parsed-extra-row"><dt>Additional parameters</dt><dd id="parsed-extra"></dd></div>
+              </dl>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="notice" aria-labelledby="security-title">
+        <div class="notice-icon" aria-hidden="true">!</div>
+        <div>
+          <h2 id="security-title">Treat activation codes like credentials</h2>
+          <p>This page processes values and images locally. Avoid sharing generated QR codes, screenshots, or activation strings with anyone you do not trust.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Static browser tool. No account, database, analytics, or image upload endpoint.</p>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
